@@ -1,0 +1,22 @@
+#共通設定
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  username: postgres #デフォルトでは無いので設定
+  password: admin #デフォルトでは無いので設定
+  host: db #デフォルトでは無いので設定
+
+development:
+  <<: *default
+  database: myapp_development
+
+test:
+  <<: *default
+  database: myapp_test
+  
+production:
+  <<: *default
+  database: myapp_production
+  username: myapp
+  password: <%= ENV["MYAPP_DATABASE_PASSWORD"] %>
