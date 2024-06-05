@@ -1,21 +1,62 @@
-# app/controllers/api/v1/phrases_controller.rb
 module Api
   module V1
     class PhrasesController < ApplicationController
-      # フレーズを見つけるためのbefore_action
-      before_action :set_phrase, only: [:show]
+      #before_action :authenticate_api_v1_user!
+      before_action :correct_user, only: [:destroy, :update]
 
       # GET /api/v1/phrases/:id
+      #あるユーザーの登録しているフレーズを全て返す
       def show
-        render json: @phrase
+        @user = User.find(params[:id])
+        @phrases = @user.phrases
+        render json: @phrases
+      end
+
+      # POST /api/v1/phrases
+      # 新しいフレーズを作成する
+      def create
+        @phrase = current_api_v1_user.phrases.build(phrase_params)
+        if @phrase.save
+          render json: @phrase, status: :created
+        else
+          render json: { errors: @phrase.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      # PUT /api/v1/phrases/:id
+      # あるフレーズIDのフレーズを更新(ただし、user_idが一致しているときのみ)
+      def update
+        @phrase = current_api_v1_user.phrases.find_by(id: params[:id])
+        if @phrase && @phrase.update(phrase_params)
+          render json: @phrase, status: :ok
+        else
+          render json: { errors: @phrase ? @phrase.errors.full_messages : ['フレーズが見つかりません'] }, status: :unprocessable_entity
+        end
+      end
+
+      # DELETE /api/v1/phrases/:id
+      # あるフレーズIDのフレーズを削除(ただし、user_idが一致しているときのみ)
+      def destroy
+        @phrase = current_api_v1_user.phrases.find_by(id: params[:id])
+        if @phrase
+          @phrase.destroy
+          render json: { message: 'フレーズが削除されました' }, status: :ok
+        else
+          render json: { message: 'フレーズが見つかりません' }, status: :not_found
+        end
       end
 
       private
 
-      # IDに基づいてフレーズを見つけるメソッド
-      def set_phrase
-        @phrase = Phrase.find(params[:id])
+      def correct_user
+        @phrase = current_api_v1_user.phrases.find_by(id: params[:id])
+        render json: { message: '許可されていません' }, status: :forbidden if @phrase.nil?
       end
+
+      def phrase_params
+        params.require(:phrase).permit(:user_id, :japanese, :english)
+      end
+      
     end
   end
 end

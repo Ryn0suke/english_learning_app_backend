@@ -17,7 +17,7 @@ Phrase.destroy_all
     password_confirmation: "password"
   )
 
-  5.times do
+  100.times do
     user.phrases.create!(
       japanese: "日本語のフレーズ#{rand(1..100)}",
       english: "English phrase #{rand(1..100)}"

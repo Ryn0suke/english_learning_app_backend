@@ -11,6 +11,10 @@ Rails.application.routes.draw do
       namespace :auth do
         resources :sessions, only: %i[index]
       end
+
+      # resources :users do
+      #   resources :phrases, only: [:index]
+      # end
     end
   end
 end
