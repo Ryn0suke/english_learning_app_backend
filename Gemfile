@@ -6,6 +6,8 @@ ruby "3.1.3"
 gem 'devise'
 gem 'devise_token_auth'
 
+gem 'kaminari'
+
 gem 'rack-cors'
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"

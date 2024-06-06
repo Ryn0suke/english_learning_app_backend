@@ -8,8 +8,8 @@ module Api
       #あるユーザーの登録しているフレーズを全て返す
       def show
         @user = User.find(params[:id])
-        @phrases = @user.phrases
-        render json: @phrases
+        @phrases = @user.phrases.page(params[:page]).per(20)
+        render json: { total_pages: @phrases.total_pages, phrases: @phrases }
       end
 
       # POST /api/v1/phrases
