@@ -1,7 +1,8 @@
 module Api
   module V1
     class PhrasesController < ApplicationController
-      #before_action :authenticate_api_v1_user!
+      before_action :authenticate_api_v1_user!
+      before_action :phrase_params, only:[:create]
       before_action :correct_user, only: [:destroy, :update]
 
       # GET /api/v1/phrases/:id
@@ -16,12 +17,21 @@ module Api
       # 新しいフレーズを作成する
       def create
         @phrase = current_api_v1_user.phrases.build(phrase_params)
+        puts params[:phrase]
         if @phrase.save
+          tag_names = params[:tags]
+
+          tag_names.map do |tag_name|
+            tag = Tag.find_or_create_by(name: tag_name) # タグを見つけるか、作成
+            @phrase.tags << tag # フレーズにタグを追加
+          end
+
           render json: @phrase, status: :created
         else
           render json: { errors: @phrase.errors.full_messages }, status: :unprocessable_entity
         end
       end
+      
 
       # PUT /api/v1/phrases/:id
       # あるフレーズIDのフレーズを更新(ただし、user_idが一致しているときのみ)
