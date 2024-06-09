@@ -7,10 +7,39 @@ module Api
 
       # GET /api/v1/phrases/:id
       #あるユーザーの登録しているフレーズを全て返す
+
+      # SELECT
+      #   tags.name
+      # FROM
+      #   tags
+      # INNER JOIN
+      #   phrase_tag_relations
+      # ON
+      #   tags.id = phrase_tag_relations.tag_id
+      # INNER JOIN
+      #   phrases
+      # ON
+      #   phrase_tag_relations.phrase_id = phrases.id
+      # WHERE
+      #   phrases.id = tags.id
+
       def show
         @user = User.find(params[:id])
         @phrases = @user.phrases.page(params[:page]).per(20)
-        render json: { total_pages: @phrases.total_pages, phrases: @phrases }
+        
+        phrases_with_tags = @phrases.map do |phrase|
+          {
+            # phrase: phrase,
+            # tags: phrase.tags
+            id: phrase.id,
+            japanese: phrase.japanese,
+            english: phrase.english,
+            tags: phrase.tags,
+          }
+        end
+
+        # render json: { total_pages: @phrases.total_pages, phrases: @phrases }
+        render json: { total_pages: @phrases.total_pages, phrases: phrases_with_tags }
       end
 
       # POST /api/v1/phrases
@@ -18,20 +47,22 @@ module Api
       def create
         @phrase = current_api_v1_user.phrases.build(phrase_params)
         puts params[:phrase]
-      
-        tag_names = params[:tags]
+        
+        tag_params = params.require(:tags).map { |tag| tag.permit(:name).to_h }
+        tag_names = tag_params.map { |tag| tag[:name] }
+        
         if tag_names.length + current_api_v1_user.tag_user_relations.count > 20
           render json: { message: 'タグは20個までしか登録できません' }, status: :unprocessable_entity
           return
         else
           if @phrase.save
             tag_names.each do |tag_name|
+              puts tag_name
               tag = Tag.find_or_create_by(name: tag_name) # タグを見つけるか、作成
               @phrase.tags << tag # フレーズにタグを追加
-              tag_user = TagUser.new(user: current_api_v1_user, tag: tag)
+              tag_user = TagUserRelation.new(user: current_api_v1_user, tag: tag)
               unless tag_user.save
                 @phrase.destroy
-                tag_user.destroy
                 render json: { errors: tag_user.errors.full_messages }, status: :unprocessable_entity
                 return
               end
