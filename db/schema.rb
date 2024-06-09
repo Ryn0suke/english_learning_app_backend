@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_06_06_175327) do
+ActiveRecord::Schema[7.0].define(version: 2024_06_08_234902) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -31,6 +31,24 @@ ActiveRecord::Schema[7.0].define(version: 2024_06_06_175327) do
     t.datetime "updated_at", null: false
     t.index ["user_id", "created_at"], name: "index_phrases_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_phrases_on_user_id"
+  end
+
+  create_table "tag_user_relations", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "tag_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tag_id"], name: "index_tag_user_relations_on_tag_id"
+    t.index ["user_id"], name: "index_tag_user_relations_on_user_id"
+  end
+
+  create_table "tag_users", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "tag_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tag_id"], name: "index_tag_users_on_tag_id"
+    t.index ["user_id"], name: "index_tag_users_on_user_id"
   end
 
   create_table "tags", force: :cascade do |t|
@@ -67,4 +85,8 @@ ActiveRecord::Schema[7.0].define(version: 2024_06_06_175327) do
   add_foreign_key "phrase_tag_relations", "phrases"
   add_foreign_key "phrase_tag_relations", "tags"
   add_foreign_key "phrases", "users"
+  add_foreign_key "tag_user_relations", "tags"
+  add_foreign_key "tag_user_relations", "users"
+  add_foreign_key "tag_users", "tags"
+  add_foreign_key "tag_users", "users"
 end

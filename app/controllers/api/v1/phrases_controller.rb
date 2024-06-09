@@ -18,19 +18,31 @@ module Api
       def create
         @phrase = current_api_v1_user.phrases.build(phrase_params)
         puts params[:phrase]
-        if @phrase.save
-          tag_names = params[:tags]
-
-          tag_names.map do |tag_name|
-            tag = Tag.find_or_create_by(name: tag_name) # タグを見つけるか、作成
-            @phrase.tags << tag # フレーズにタグを追加
-          end
-
-          render json: @phrase, status: :created
+      
+        tag_names = params[:tags]
+        if tag_names.length + current_api_v1_user.tag_user_relations.count > 20
+          render json: { message: 'タグは20個までしか登録できません' }, status: :unprocessable_entity
+          return
         else
-          render json: { errors: @phrase.errors.full_messages }, status: :unprocessable_entity
+          if @phrase.save
+            tag_names.each do |tag_name|
+              tag = Tag.find_or_create_by(name: tag_name) # タグを見つけるか、作成
+              @phrase.tags << tag # フレーズにタグを追加
+              tag_user = TagUser.new(user: current_api_v1_user, tag: tag)
+              unless tag_user.save
+                @phrase.destroy
+                tag_user.destroy
+                render json: { errors: tag_user.errors.full_messages }, status: :unprocessable_entity
+                return
+              end
+            end
+            render json: @phrase, status: :created
+          else
+            render json: { errors: @phrase.errors.full_messages }, status: :unprocessable_entity
+          end
         end
       end
+      
       
 
       # PUT /api/v1/phrases/:id

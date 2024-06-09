@@ -1,15 +1,8 @@
 class Tag < ApplicationRecord
-    # belongs_to :user
-    has_many :phrase_tag_relations
+    has_many :phrase_tag_relations, dependent: :destroy
     has_many :phrases, through: :phrase_tag_relations
-    # validate :check_number_of_tags
-
-    private
-
-    # def check_number_of_tags
-    #     if user.tags.count >= 20
-    #         errors.add(:base, 'タグをこれ以上登録できません(上限：20)')
-    #     end
-    # end
+    accepts_nested_attributes_for :phrase_tag_relations
+    has_many :users, through: :tag_user_relations
+    has_many :tag_user_relations, dependent: :destroy
+    accepts_nested_attributes_for :tag_user_relations
 end
-

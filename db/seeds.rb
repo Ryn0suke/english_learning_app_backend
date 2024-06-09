@@ -8,19 +8,28 @@
 
 User.destroy_all
 Phrase.destroy_all
+Tag.destroy_all
+PhraseTagRelation.destroy_all
+TagUserRelation.destroy_all
+User.create!(
+  name: "test",
+  email: "test@gmail.com",
+  password: "password",
+  password_confirmation: "password"
+)
 
-5.times do |n|
-  user = User.create!(
-    name: "test#{n+1}",
-    email: "test#{n+1}@gmail.com",
-    password: "password",
-    password_confirmation: "password"
-  )
+# 5.times do |n|
+#   user = User.create!(
+#     name: "test#{n+1}",
+#     email: "test#{n+1}@gmail.com",
+#     password: "password",
+#     password_confirmation: "password"
+#   )
 
-  100.times do
-    user.phrases.create!(
-      japanese: "日本語のフレーズ#{rand(1..100)}",
-      english: "English phrase #{rand(1..100)}"
-    )
-  end
-end
+#   100.times do
+#     user.phrases.create!(
+#       japanese: "日本語のフレーズ#{rand(1..100)}",
+#       english: "English phrase #{rand(1..100)}"
+#     )
+#   end
+# end
