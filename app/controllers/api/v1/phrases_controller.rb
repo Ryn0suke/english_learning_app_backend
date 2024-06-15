@@ -5,23 +5,6 @@ module Api
       before_action :phrase_params, only:[:create]
       before_action :correct_user, only: [:destroy, :update]
 
-      # GET /api/v1/phrases/:id
-      #あるユーザーの登録しているフレーズを全て返す
-
-      # SELECT
-      #   tags.name
-      # FROM
-      #   tags
-      # INNER JOIN
-      #   phrase_tag_relations
-      # ON
-      #   tags.id = phrase_tag_relations.tag_id
-      # INNER JOIN
-      #   phrases
-      # ON
-      #   phrase_tag_relations.phrase_id = phrases.id
-      # WHERE
-      #   phrases.id = tags.id
 
       def show
         @user = User.find(params[:id])
@@ -60,11 +43,14 @@ module Api
               puts tag_name
               tag = Tag.find_or_create_by(name: tag_name) # タグを見つけるか、作成
               @phrase.tags << tag # フレーズにタグを追加
-              tag_user = TagUserRelation.new(user: current_api_v1_user, tag: tag)
-              unless tag_user.save
-                @phrase.destroy
-                render json: { errors: tag_user.errors.full_messages }, status: :unprocessable_entity
-                return
+      
+              tag_user_relation = TagUserRelation.find_or_initialize_by(user: current_api_v1_user, tag: tag)
+              unless tag_user_relation.persisted?
+                unless tag_user_relation.save
+                  @phrase.destroy
+                  render json: { errors: tag_user_relation.errors.full_messages }, status: :unprocessable_entity
+                  return
+                end
               end
             end
             render json: @phrase, status: :created
@@ -73,6 +59,7 @@ module Api
           end
         end
       end
+      
       
       
 
@@ -92,6 +79,17 @@ module Api
       def destroy
         @phrase = current_api_v1_user.phrases.find_by(id: params[:id])
         if @phrase
+          #todo:@phraseに紐づいているtagを調べる
+          #そのtagが、同じユーザーの他のphraseで使われていなければ一緒に削除する
+          linked_tags = @phrase.tags
+
+          linked_tags.each do |linked_tag|
+            if TagUserRelation.where(tag_id: linked_tag.id).count > 1
+              next
+            else
+              linked_tag.destroy
+            end
+          end
           @phrase.destroy
           render json: { message: 'フレーズが削除されました' }, status: :ok
         else

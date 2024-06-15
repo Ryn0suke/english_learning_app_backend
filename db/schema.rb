@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_06_08_234902) do
+ActiveRecord::Schema[7.0].define(version: 2024_06_15_080933) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -39,6 +39,7 @@ ActiveRecord::Schema[7.0].define(version: 2024_06_08_234902) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["tag_id"], name: "index_tag_user_relations_on_tag_id"
+    t.index ["user_id", "tag_id"], name: "index_tag_user_relations_on_user_id_and_tag_id", unique: true
     t.index ["user_id"], name: "index_tag_user_relations_on_user_id"
   end
 
