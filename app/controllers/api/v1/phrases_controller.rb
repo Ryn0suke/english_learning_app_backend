@@ -67,21 +67,71 @@ module Api
       # あるフレーズIDのフレーズを更新(ただし、user_idが一致しているときのみ)
       def update
         @phrase = current_api_v1_user.phrases.find_by(id: params[:id])
-        if @phrase && @phrase.update(phrase_params)
+
+        if @phrase.nil?
+          render json: { errors: ['フレーズが見つかりません'] }, status: :unprocessable_entity
+          return
+        end
+
+        #tagに変更があった場合に、1. 現在のタグを取得 2. 送られてきたタグと現在のタグの差分をとり、差分は削除
+        #3. 新たなタグを追加 の順番で処理
+
+        if @phrase.update(phrase_params)
+          #1
+          current_tags = @phrase.tags.pluck(:name)
+          #2
+          new_tags = params.require(:tags).map { |tag| tag.permit(:name)[:name] }
+          #削除するタグ
+          delete_tags = current_tags - new_tags
+          #追加するタグ
+          add_tags = new_tags - current_tags
+
+          #削除
+          delete_tags.each do |delete_tag_name|
+            delete_tag = Tag.find_by(name: delete_tag_name)
+            if delete_tag
+              @phrase.tags.delete(delete_tag)
+
+              if delete_tag.phrases.where(user_id: current_api_v1_user.id).empty?
+                TagUserRelation.where(user: current_api_v1_user, tag: delete_tag).destroy_all
+              end
+            end
+          end
+
+          #追加
+          add_tags.each do |add_tag_name|
+            add_tag = Tag.find_or_create_by(name: add_tag_name)
+            @phrase.tags << add_tag unless @phrase.tags.include?(add_tag)
+            tag_user_relation = TagUserRelation.find_or_initialize_by(user: current_api_v1_user, tag: add_tag)
+            tag_user_relation.save! unless tag_user_relation.persisted?
+          end
+
           render json: @phrase, status: :ok
         else
-          render json: { errors: @phrase ? @phrase.errors.full_messages : ['フレーズが見つかりません'] }, status: :unprocessable_entity
+          render json: { errors: @phrase.errors.full_messages }, status: :unprocessable_entity
         end
+
+
+
+        # puts "\n\n\n\n\n\n"
+        # puts current_tags
+
       end
 
       # DELETE /api/v1/phrases/:id
       # あるフレーズIDのフレーズを削除(ただし、user_idが一致しているときのみ)
       def destroy
         @phrase = current_api_v1_user.phrases.find_by(id: params[:id])
+        
         if @phrase
           #todo:@phraseに紐づいているtagを調べる
           #そのtagが、同じユーザーの他のphraseで使われていなければ一緒に削除する
+          
+          #1
           linked_tags = @phrase.tags
+
+          #2
+
 
           linked_tags.each do |linked_tag|
             if TagUserRelation.where(tag_id: linked_tag.id).count > 1
