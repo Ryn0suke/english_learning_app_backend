@@ -7,8 +7,11 @@ module Api
 
 
       def show
+        puts "\n\n\n\n"
+        puts params.inspect
         @user = User.find(params[:id])
-        @phrases = @user.phrases.page(params[:page]).per(20)
+        #@phrases = @user.phrases.page(params[:page]).per(10)
+        @phrases = @user.phrases.search(params).page(params[:page]).per(10)
         
         phrases_with_tags = @phrases.map do |phrase|
           {
@@ -21,7 +24,6 @@ module Api
           }
         end
 
-        # render json: { total_pages: @phrases.total_pages, phrases: @phrases }
         render json: { total_pages: @phrases.total_pages, phrases: phrases_with_tags }
       end
 
@@ -59,9 +61,6 @@ module Api
           end
         end
       end
-      
-      
-      
 
       # PUT /api/v1/phrases/:id
       # あるフレーズIDのフレーズを更新(ただし、user_idが一致しているときのみ)
@@ -110,12 +109,6 @@ module Api
         else
           render json: { errors: @phrase.errors.full_messages }, status: :unprocessable_entity
         end
-
-
-
-        # puts "\n\n\n\n\n\n"
-        # puts current_tags
-
       end
 
       # DELETE /api/v1/phrases/:id
