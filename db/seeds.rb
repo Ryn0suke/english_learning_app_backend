@@ -5,7 +5,7 @@
 #
 #   movies = Movie.create([{ name: "Star Wars" }, { name: "Lord of the Rings" }])
 #   Character.create(name: "Luke", movie: movies.first)
-
+Check.destroy_all
 User.destroy_all
 Phrase.destroy_all
 Tag.destroy_all
@@ -17,6 +17,7 @@ User.create!(
   password: "password",
   password_confirmation: "password"
 )
+
 
 # 5.times do |n|
 #   user = User.create!(

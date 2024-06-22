@@ -10,9 +10,21 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_06_15_080933) do
+ActiveRecord::Schema[7.0].define(version: 2024_06_22_092555) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "checks", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "phrase_id", null: false
+    t.boolean "state1", default: false
+    t.boolean "state2", default: false
+    t.boolean "state3", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["phrase_id"], name: "index_checks_on_phrase_id"
+    t.index ["user_id"], name: "index_checks_on_user_id"
+  end
 
   create_table "phrase_tag_relations", force: :cascade do |t|
     t.bigint "phrase_id", null: false
@@ -83,6 +95,8 @@ ActiveRecord::Schema[7.0].define(version: 2024_06_15_080933) do
     t.index ["uid", "provider"], name: "index_users_on_uid_and_provider", unique: true
   end
 
+  add_foreign_key "checks", "phrases"
+  add_foreign_key "checks", "users"
   add_foreign_key "phrase_tag_relations", "phrases"
   add_foreign_key "phrase_tag_relations", "tags"
   add_foreign_key "phrases", "users"

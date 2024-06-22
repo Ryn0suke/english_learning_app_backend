@@ -6,3 +6,4 @@
 
 rails
 コンソール: rails c
+モデル作成: rails g model テーブル名 カラム名:型
