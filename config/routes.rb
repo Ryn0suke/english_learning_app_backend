@@ -4,6 +4,7 @@ Rails.application.routes.draw do
       resources :test, only: %i[index]
       resources :phrases
       resources :tags
+      resources :questions, only: %i[show]
 
       mount_devise_token_auth_for 'User', at: 'auth', controllers: {
         registrations: 'api/v1/auth/registrations'

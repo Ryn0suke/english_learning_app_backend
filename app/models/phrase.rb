@@ -18,10 +18,26 @@ class Phrase < ApplicationRecord
     is_partial_match = judge_partial_match(params)
 
     tags = params[:search][:tags].to_unsafe_h.map { |_, tag| tag["name"] }
+
+    # puts "-----------------"
+    # puts params[:search]
+    # puts "-----------------"
+
     search_by_check_state(params[:search][:state1], params[:search][:state2], params[:search][:state3], is_partial_match)
       .search_by_japanese(params[:search][:japanese], is_partial_match)
       .search_by_english(params[:search][:english], is_partial_match)
       .search_by_tags(tags)
+  }
+
+  scope :search_for_question, -> (params) {
+    tags = params[:option][:tags].to_unsafe_h.map { |_, tag| tag["name"] }
+
+    puts "-----------------aaaaaaaa"
+    puts tags
+    puts "-----------------aaaaaaaa"
+
+    search_by_check_state(params[:option][:state1], params[:option][:state2], params[:option][:state3], true)
+    .search_by_tags(tags)
   }
 
   scope :search_by_japanese, -> (japanese, isPartialMatch) {
@@ -50,12 +66,26 @@ class Phrase < ApplicationRecord
         conditions[:state3] = judge_state(state3)
       end
     end
-    return joins(:check).where(check: conditions)
+    
+
+    puts "\n\n\n\n\n\n\n -------------"
+    puts conditions
+    puts "\n\n\n\n\n\n\n -------------"
+
+    if conditions.blank?
+      return all
+    else
+      return joins(:check).where(check: conditions)
+    end
   }
   
 
   scope :search_by_tags, -> (tags) {
-    return all if tags[0] == ""
+    return all if tags[0] == "" || tags.blank?
+    # if tags[0] == "" || tags.blank?
+    #   puts "\n\n\n\n\n\n\n tagstags \n\n\n\n\n\n\n"
+    #   return all
+    # end
     # return all if tags.blank?
     joins(:phrase_tag_relations).joins(:tags)
       .where(tags: { name: tags })
@@ -69,8 +99,6 @@ class Phrase < ApplicationRecord
   end
 
   def self.judge_state(state)
-    puts "ima"
-    puts state
     state == "true" ? true : false
   end
 

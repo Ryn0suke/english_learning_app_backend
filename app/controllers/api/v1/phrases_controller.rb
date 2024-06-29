@@ -77,8 +77,6 @@ module Api
       # PUT /api/v1/phrases/:id
       # あるフレーズIDのフレーズを更新(ただし、user_idが一致しているときのみ)
       def update
-        puts "\n\n\n\n aaaa"
-        puts params
         @phrase = current_api_v1_user.phrases.find_by(id: params[:id])
       
         if @phrase.nil?
@@ -156,29 +154,29 @@ module Api
         @phrase = current_api_v1_user.phrases.find_by(id: params[:id])
         
         if @phrase
-          #todo:@phraseに紐づいているtagを調べる
-          #そのtagが、同じユーザーの他のphraseで使われていなければ一緒に削除する
-          
-          #1
-          linked_tags = @phrase.tags
-
-          #2
-
-
-          linked_tags.each do |linked_tag|
-            if TagUserRelation.where(tag_id: linked_tag.id).count > 1
-              next
-            else
-              linked_tag.destroy
+          ActiveRecord::Base.transaction do
+            # @phraseに紐づいているtagを調べる
+            linked_tags = @phrase.tags
+            
+            linked_tags.each do |linked_tag|
+              if TagUserRelation.where(tag_id: linked_tag.id).count > 1
+                current_tag_user_relations = TagUserRelation.where(user_id: current_api_v1_user.id, tag_id: linked_tag.id)
+                current_tag_user_relations.destroy_all
+              else
+                linked_tag.destroy
+              end
             end
+            
+            @phrase.check.destroy
+            @phrase.destroy
+            
+            render json: { message: 'フレーズが削除されました' }, status: :ok
           end
-          @phrase.check.destroy
-          @phrase.destroy
-          render json: { message: 'フレーズが削除されました' }, status: :ok
         else
           render json: { message: 'フレーズが見つかりません' }, status: :not_found
         end
       end
+      
 
       private
 
