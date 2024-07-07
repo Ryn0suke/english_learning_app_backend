@@ -7,18 +7,13 @@ module Api
 
 
       def show
-        # puts "\n\n\n\n"
-        # puts params.inspect
         @user = User.find(params[:id])
-        #@phrases = @user.phrases.page(params[:page]).per(10)
         @phrases = @user.phrases.search(params).page(params[:page]).per(10)
         
         phrases_with_tags = @phrases.map do |phrase|
           state = phrase.check
           state1, state2, state3 = state[:state1], state[:state2], state[:state3]
           {
-            # phrase: phrase,
-            # tags: phrase.tags
             id: phrase.id,
             japanese: phrase.japanese,
             english: phrase.english,
@@ -28,7 +23,6 @@ module Api
             state3: state3,
           }
         end
-
         render json: { total_pages: @phrases.total_pages, phrases: phrases_with_tags }
       end
 
@@ -36,7 +30,6 @@ module Api
       # 新しいフレーズを作成する
       def create
         @phrase = current_api_v1_user.phrases.build(phrase_params)
-        #puts params[:phrase]
         
         tag_params = params.require(:tags).map { |tag| tag.permit(:name).to_h }
         tag_names = tag_params.map { |tag| tag[:name] }
@@ -73,7 +66,6 @@ module Api
         end
       end
 
-
       # PUT /api/v1/phrases/:id
       # あるフレーズIDのフレーズを更新(ただし、user_idが一致しているときのみ)
       def update
@@ -89,8 +81,6 @@ module Api
         delete_tags = current_tags - new_tags
         add_tags = new_tags - current_tags
 
-        # puts "\n\n\n\n\n\n"
-        # puts current_tags - new_tags + add_tags
         if (current_tags - new_tags + add_tags).length > 20
           render json: { message: 'タグは20個までしか登録できません' }, status: :unprocessable_entity
           return
@@ -102,15 +92,6 @@ module Api
               #チェック状態の更新
               @phrase.check.update(check_params)
 
-              # # 1
-              # current_tags = @phrase.tags.pluck(:name)
-              # # 2
-              # new_tags = params.require(:tags).map { |tag| tag.permit(:name)[:name] }
-              # # 削除するタグ
-              # delete_tags = current_tags - new_tags
-              # # 追加するタグ
-              # add_tags = new_tags - current_tags
-      
               # 削除
               delete_tags.each do |delete_tag_name|
                 delete_tag = Tag.find_by(name: delete_tag_name)
@@ -122,14 +103,7 @@ module Api
                   end
                 end
               end
-      
-              # 追加
-              # if check_number_of_tags() + add_tags.size > 20
-              #   raise ActiveRecord::Rollback, "タグの数が20を超えています"
-              #   render json: { message: 'タグは20個までしか登録できません' }, status: :unprocessable_entity
-              #   return
-              # end
-      
+
               add_tags.each do |add_tag_name|
                 add_tag = Tag.find_or_create_by!(name: add_tag_name)
                 @phrase.tags << add_tag unless @phrase.tags.include?(add_tag)
@@ -159,14 +133,17 @@ module Api
             linked_tags = @phrase.tags
             
             linked_tags.each do |linked_tag|
-              if TagUserRelation.where(tag_id: linked_tag.id).count > 1
-                current_tag_user_relations = TagUserRelation.where(user_id: current_api_v1_user.id, tag_id: linked_tag.id)
-                current_tag_user_relations.destroy_all
+              # 現在のユーザーに関連付けられたフレーズでそのタグが他に使われているかを確認
+              if linked_tag.phrases.where(user_id: current_api_v1_user.id).count > 1
+                # 他のフレーズでも使われている場合、タグユーザーリレーションのみ削除
+                TagUserRelation.where(user_id: current_api_v1_user.id, tag_id: linked_tag.id).destroy_all
               else
+                # 他のフレーズで使われていない場合、タグを削除
                 linked_tag.destroy
               end
             end
             
+            # フレーズとそのチェックを削除
             @phrase.check.destroy
             @phrase.destroy
             
@@ -175,6 +152,8 @@ module Api
         else
           render json: { message: 'フレーズが見つかりません' }, status: :not_found
         end
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { errors: [e.message] }, status: :unprocessable_entity
       end
       
 

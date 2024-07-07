@@ -5,11 +5,11 @@ module Api
   
         def show
           @user = User.find(params[:id])
-          @phrases = @user.phrases.search_for_question(params).page(params[:page]).per(params[:numOfQuestions])
 
-          puts "---------------------------------------------------------"
-          puts @phrases
-          puts "---------------------------------------------------------"
+          page = params[:option][:page].to_i
+          num_of_questions = params[:option][:numOfQuestions].to_i
+
+          @phrases = @user.phrases.search_for_question(params).page(page).per(num_of_questions)#params[:numOfQuestions].to_i)
 
           phrases_with_tags = @phrases.map do |phrase|
             state = phrase.check
