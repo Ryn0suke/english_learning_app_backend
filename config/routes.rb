@@ -2,6 +2,11 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resources :test, only: %i[index]
+      resources :searches, only: %i[show] do
+        collection do
+          get ':japanese', to: 'searches#show', as: 'search'
+        end
+      end
       resources :phrases
       resources :tags
       resources :questions, only: %i[show]
@@ -13,11 +18,8 @@ Rails.application.routes.draw do
       namespace :auth do
         resources :sessions, only: %i[index]
       end
-
-      # resources :users do
-      #   resources :phrases, only: [:index]
-      # end
     end
   end
 end
+
 
